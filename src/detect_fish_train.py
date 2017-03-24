@@ -4,20 +4,48 @@ from keras.layers import Flatten, Dense, AveragePooling2D
 from keras.models import Model
 from keras.optimizers import RMSprop, SGD
 from keras.callbacks import ModelCheckpoint
-from keras.preprocessing.image import ImageDataGenerator
+from keras.preprocessing.image import ImageDataGenerator, array_to_img
+import datetime
+import numpy as np
 
 learning_rate = 0.0001
 img_width = 299
 img_height = 299
-nbr_train_samples = 3019
-nbr_validation_samples = 758
-nbr_epochs = 25
+nbr_train_samples = 2847 #3019
+nbr_validation_samples = 424 #758
+nbr_epochs = 50
 batch_size = 32
+#
+BEST_MODEL_FILE = "/home/icarus/kaggle/Kaggle-Fish/model_weights/fish_weights_2.h5"
+train_data_dir = '/home/icarus/kaggle/Kaggle-Fish/data/FishTrainingSet'
+val_data_dir = '/home/icarus/kaggle/Kaggle-Fish/data/FishValidationSet'
 
-train_data_dir = '/Users/pengpai/Desktop/python/DeepLearning/Kaggle/NCFM/data/train_split'
-val_data_dir = '/Users/pengpai/Desktop/python/DeepLearning/Kaggle/NCFM/data/val_split'
+FishNames = ['FISH', 'NOFISH']
+#==============================================================================
 
-FishNames = ['FISH', 'NO_FISH']
+# https://gist.github.com/embanner/6149bba89c174af3bfd69537b72bca74
+
+#==============================================================================
+
+def preprocess_input_Inception(x):
+    """Wrapper around keras.applications.vgg16.preprocess_input()
+    to make it compatible for use with keras.preprocessing.image.ImageDataGenerator's
+    `preprocessing_function` argument.
+    Parameters
+    ----------
+    x : a numpy 3darray (a single image to be preprocessed)
+    Note we cannot pass keras.applications.vgg16.preprocess_input()
+    directly to to keras.preprocessing.image.ImageDataGenerator's
+    `preprocessing_function` argument because the former expects a
+    4D tensor whereas the latter expects a 3D tensor. Hence the
+    existence of this wrapper.
+    Returns a numpy 3darray (the preprocessed image).
+    """
+    from keras.applications.inception_v3 import preprocess_input
+    X = np.expand_dims(x, axis=0)
+    X = preprocess_input(X)
+    return X[0]
+
 
 print('Loading InceptionV3 Weights ...')
 InceptionV3_notop = InceptionV3(include_top=False, weights='imagenet',
@@ -26,38 +54,39 @@ InceptionV3_notop = InceptionV3(include_top=False, weights='imagenet',
 # (x / 255 - 0.5) x 2
 
 print('Adding Average Pooling Layer and Softmax Output Layer ...')
-output = InceptionV3_notop.get_layer(index = -1).output  # Shape: (8, 8, 2048)
+output = InceptionV3_notop.output  # Shape: (8, 8, 2048)
 output = AveragePooling2D((8, 8), strides=(8, 8), name='avg_pool')(output)
 output = Flatten(name='flatten')(output)
 #output = Dense(8, activation='softmax', name='predictions')(output)
 #output = Dense(2, activation='softmax', name='predictions')(output)
-output = Dense(2, activation='sigmoid', name='predictions')(output)
+output = Dense(2, activation='softmax', name='predictions')(output)
 
 
 InceptionV3_model = Model(InceptionV3_notop.input, output)
 #InceptionV3_model.summary()
-
+for layer in InceptionV3_notop.layers:
+	layer.trainable = False
+#
 optimizer = SGD(lr = learning_rate, momentum = 0.9, decay = 0.0, nesterov = True)
-#InceptionV3_model.compile(loss='categorical_crossentropy', optimizer = optimizer, metrics = ['accuracy'])
-InceptionV3_model.compile(loss='binary_crossentropy', optimizer = optimizer, metrics = ['accuracy'])
+InceptionV3_model.compile(loss='categorical_crossentropy', optimizer = optimizer, metrics = ['accuracy'])
 # autosave best Model
-best_model_file = "./weights.h5"
+best_model_file = BEST_MODEL_FILE
 best_model = ModelCheckpoint(best_model_file, monitor='val_acc', verbose = 1, save_best_only = True)
 
 # this is the augmentation configuration we will use for training
 train_datagen = ImageDataGenerator(
-        rescale=1./255,
+        preprocessing_function=preprocess_input_Inception,
         shear_range=0.1,
         zoom_range=0.1,
-        rotation_range=10.,
+        rotation_range=30.,
         width_shift_range=0.1,
         height_shift_range=0.1,
         horizontal_flip=True)
 
 # this is the augmentation configuration we will use for validation:
 # only rescaling
-val_datagen = ImageDataGenerator(rescale=1./255)
-
+#val_datagen = ImageDataGenerator(rescale=1./255)
+val_datagen = ImageDataGenerator(preprocessing_function=preprocess_input_Inception)
 train_generator = train_datagen.flow_from_directory(
         train_data_dir,
         target_size = (img_width, img_height),

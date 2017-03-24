@@ -25,13 +25,15 @@ img_height = 299
 #nbr_validation_samples = 758
 nbr_train_samples = 173 + 128
 nbr_validation_samples = 62 + 34
-BEST_MODEL_FILE = "./fish_water_weights.h5"
+BEST_MODEL_FILE = "/home/icarus/kaggle/Kaggle-Fish/model_weights/fish_water_weights_2.h5"
 
 nbr_epochs = 40
 batch_size = 16
 
-train_data_dir = '/home/pyimagesearch/kaggle/FishTrainingSet2'
-val_data_dir = '/home/pyimagesearch/kaggle/FishValidationSet2'
+train_data_dir = '/home/icarus/kaggle/Kaggle-Fish/data/FishTrainingSet2'
+
+#nbr_epochs = 40
+val_data_dir = '/home/icarus/kaggle/Kaggle-Fish/data/FishValidationSet2'
 #FishNames = ['ALB', 'BET', 'DOL', 'LAG', 'NoF', 'OTHER', 'SHARK', 'YFT']
 FishNames = ['FISH', 'WATER']
 #==============================================================================
@@ -78,7 +80,7 @@ output = Dense(2, activation='softmax', name='predictions')(output)
 
 model = Model(InceptionV3_notop.input, output)
 #InceptionV3_model.summary()
-print(model.summary())
+#print(model.summary())
 #InceptionV3_model.summary()
 for layer in InceptionV3_notop.layers:
     layer.trainable = False

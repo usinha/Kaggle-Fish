@@ -8,7 +8,7 @@ import imutils
 import os
 import glob
 import random
-
+from keras.models import load_model
 # import the necessary packages
 from keras.preprocessing import image as image_utils
 from keras.applications.inception_v3 import InceptionV3
@@ -35,12 +35,12 @@ FISH = ["SHARK", "HAMMERHEAD", "FISH", "RAY", "SALMON", "STURGEON", "DOLPHIN",
      "TENCH", "BARRACOUTA","PUFFER", "GAR"]
 THRESHOLD_MATCHES = 4
 #MAX_OUT_IMAGES = 300
-ROOT_WEIGHTS_DIR = '/home/pyimagesearch/kaggle/source'
-WEIGHTS_FILE = 'fish_weights.h5'
-WEIGHTS_FILE_3 = 'fish_water_weights.h5'
+ROOT_WEIGHTS_DIR = '/home/icarus/kaggle/Kaggle-Fish/model_weights' #'/home/pyimagesearch/kaggle/source'
+WEIGHTS_FILE = 'fish_weights_2.h5'
+WEIGHTS_FILE_3 = 'fish_water_weights_2.h5'
 total_out_images = 0
 total_processed_images = 0
-OUT_DIRECTORY = "/home/pyimagesearch/kaggle/FINAL_DerivedImages"
+OUT_DIRECTORY = '/home/icarus/kaggle/Kaggle-Fish/data/Final_Derived_Images' #"/home/pyimagesearch/kaggle/FINAL_DerivedImages"
 
 def sliding_window(image, stepSize, windowSize):
     # slide a window across the image
@@ -199,8 +199,8 @@ def extractFishImages(VGG_model,model, model_3,imagedir,filenm) :
         topItems.append(t)
         py_num += 1
 
-        print ('pyramid=' + str(py_num))
-        print(resized.shape)
+        #print ('pyramid=' + str(py_num))
+        #print(resized.shape)
             #if the image is too small, break from the loop
         if resized.shape[0] < winH or resized.shape[1] < winW:
             break
@@ -274,54 +274,45 @@ if __name__ == "__main__" :
     #
     # load customized inception for phase-2
 
-    root_path = '/home/pyimagesearch/kaggle/source'
+    #root_path = '/home/pyimagesearch/kaggle/source'
+    #	
 
     weights_path = os.path.join(ROOT_WEIGHTS_DIR, WEIGHTS_FILE)
+    #
     print("[INFO] loading Inception network...")
-    InceptionV3_notop = InceptionV3(include_top=False, weights='imagenet',
-                        input_tensor=None, input_shape=(299, 299, 3))
+#    InceptionV3_notop = InceptionV3(include_top=False, weights='imagenet',
+#                        input_tensor=None, input_shape=(299,299,3))
     # Note that the preprocessing of InceptionV3 is:
     # (x / 255 - 0.5) x 2
-    print('Adding Average Pooling Layer and Softmax Output Layer ...')
-    output = InceptionV3_notop.output  # Shape: (8, 8, 2048)
-    output = AveragePooling2D((8, 8), strides=(8, 8), name='avg_pool')(output)
-    output = Flatten(name='flatten')(output)
-    output = Dense(2, activation='softmax', name='predictions')(output)
-    model_2 = Model(InceptionV3_notop.input, output)
+ #   print('Adding Average Pooling Layer and Softmax Output Layer ...')
+#    output = InceptionV3_notop.output  # Shape: (8, 8, 2048)
+#    output = AveragePooling2D((8, 8), strides=(8, 8), name='avg_pool')(output)
+ #   output = Flatten(name='flatten')(output)
+ #   output = Dense(2, activation='softmax', name='predictions')(output)
+ #   model_2 = Model(InceptionV3_notop.input, output)
+    model_2 = load_model(weights_path)
+
    #
-    print ('loading saved weights')
-    model_2.load_weights(weights_path)
-    optimizer = SGD(lr = 0.0001, momentum = 0.9, decay = 0.0, nesterov = True)
-    print('compiling model2')
-    model_2.compile(loss='categorical_crossentropy', optimizer = optimizer, metrics = ['accuracy'])
+#    print ('loading saved weights')
+#    model_2.load_weights(weights_path)
+#    optimizer = SGD(lr = 0.0001, momentum = 0.9, decay = 0.0, nesterov = True)
+#    print('compiling model2')
+#    model_2.compile(loss='categorical_crossentropy', optimizer = optimizer, metrics = ['accuracy'])
     #
     weights_path_3 = os.path.join(ROOT_WEIGHTS_DIR, WEIGHTS_FILE_3)
     print("[INFO] loading Inception network...")
-    InceptionV3_notop_3 = InceptionV3(include_top=False, weights='imagenet',
-                        input_tensor=None, input_shape=(299, 299, 3))
-    # Note that the preprocessing of InceptionV3 is:
-    # (x / 255 - 0.5) x 2
-    print('Adding Average Pooling Layer and Softmax Output Layer ...')
-    output_3 = InceptionV3_notop_3.output  # Shape: (8, 8, 2048)
-    output_3 = AveragePooling2D((8, 8), strides=(8, 8), name='avg_pool')(output_3)
-    output_3 = Flatten(name='flatten')(output_3)
-    output_3 = Dense(2, activation='softmax', name='predictions')(output_3)
-    model_3 = Model(InceptionV3_notop_3.input, output_3)
-   #
+    model_3 = load_model(weights_path_3)
     print ('loading saved weights')
-    model_3.load_weights(weights_path_3)
-    optimizer = SGD(lr = 0.0001, momentum = 0.9, decay = 0.0, nesterov = True)
-    print('compiling model_3')
-    model_3.compile(loss='categorical_crossentropy', optimizer = optimizer, metrics = ['accuracy'])
-       #
-    print("[INFO] model_3 loaded...")
+    #print("[INFO] model_3 loaded...")
     im_files = os.listdir(imagedir)
     im_files = sorted(im_files)
     #for file in os.listdir(imagedir):
     running_file_count = 0
     for file in im_files:
         running_file_count += 1
-        if (running_file_count % 100 ) == 0 :
+        if (file < 'img_03224'):
+	    continue	
+	if (running_file_count % 50 ) == 0 :
             print ('running input file count=' + str(running_file_count))
         if file.endswith(".jpg") :
             extractFishImages(VGG_model,model_2,model_3,imagedir, file)
