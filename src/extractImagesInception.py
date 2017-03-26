@@ -1,4 +1,5 @@
 from keras import backend as K
+from keras.models import load_model
 import cv2
 import argparse
 import numpy as np
@@ -20,12 +21,6 @@ from keras.applications.vgg16 import VGG16
 from keras.applications.vgg16 import preprocess_input as VGG_preprocess_input
 from keras.applications.vgg16  import decode_predictions as VGG_decode_predictions
 
-#from imagenet_utils import decode_predictions
-#from imagenet_utils import preprocess_input
-#from vgg16 import VGG16
-#FISH = ["SHARK", "HAMMERHEAD", "FISH", "RAY", "SALMON", "STURGEON", "DOLPHIN",
-#     "great_white_shark", "platypus", "stingray", "'COHO", "ELECTRIC_RAY"]
-#THRESHOLD_MATCHES = 4
 THRESHOLD_PROB = 0.3
 THRESHOLD_VGG_PROB = 0.2
 TOP_SIZE = 2 # size of top images based on probality it's a fish
@@ -33,10 +28,12 @@ FISH = ["SHARK", "HAMMERHEAD", "FISH", "RAY", "SALMON", "STURGEON", "DOLPHIN",
      "GREAT_WHITE_SHARK", "PLATYPUS", "STINGRAY", "'COHO", "ELECTRIC_RAY",
      "TENCH", "BARRACOUTA","PUFFER", "GAR"]
 THRESHOLD_MATCHES = 4
-MAX_OUT_IMAGES = 300
-ROOT_WEIGHTS_DIR = '/home/pyimagesearch/kaggle/source'
-WEIGHTS_FILE = 'fish_weights.h5'
-WEIGHTS_FILE_3 = 'fish_water_weights.h5'
+MAX_OUT_IMAGES = 200
+ROOT_MODEL_DIR = '/home/icarus/kaggle/Kaggle-Fish/model_weights'
+MODEL_FILE = 'fish_weights_2.h5'
+MODEL_FILE_3 = 'fish_water_weights_2.h5'
+OUT_DIRECTORY = '/home/icarus/kaggle/Kaggle-Fish/data/DerivedImages'
+
 total_out_images = 0
 
 def sliding_window(image, stepSize, windowSize):
@@ -176,21 +173,20 @@ def predictIfFish_3(image, model, threshold_prob = 0.5) :
 def extractFishImages(VGG_model,model, model_3,fullImagePath) :
     image = cv2.imread(fullImagePath)
     imagename = fullImagePath
-    OUT_DIRECTORY = "DerivedImages"
     if (not os.path.exists(OUT_DIRECTORY)) :
         os.mkdir(OUT_DIRECTORY)
     filenmInd1 = imagename.find("img_")
     folder = imagename[imagename.find("train")+5:filenmInd1]
     fullfolder = OUT_DIRECTORY + folder[:-1]
-    print ("fullfolder=" + fullfolder)
+    #print ("fullfolder=" + fullfolder)
     if (not os.path.exists(fullfolder)) :
         os.mkdir(fullfolder)
     filenmInd2 = imagename.find(".jpg")
     filenm = imagename[filenmInd1:filenmInd2]
     outFilePrefix = folder + filenm
-    print ("outfileprefix= " + outFilePrefix)
-    print("width:{} pixels".format(image.shape[1]))
-    print("height: {} pixels".format(image.shape[0]))
+    #print ("outfileprefix= " + outFilePrefix)
+    #print("width:{} pixels".format(image.shape[1]))
+    #print("height: {} pixels".format(image.shape[0]))
     #cv2.imshow("Image", image)
 
     #cv2.waitKey(0)
@@ -214,8 +210,8 @@ def extractFishImages(VGG_model,model, model_3,fullImagePath) :
         topItems.append(t)
         py_num += 1
 
-        print ('pyramid=' + str(py_num))
-        print(resized.shape)
+        #print ('pyramid=' + str(py_num))
+        #print(resized.shape)
             #if the image is too small, break from the loop
         if resized.shape[0] < winH or resized.shape[1] < winW:
             break
@@ -249,7 +245,7 @@ def extractFishImages(VGG_model,model, model_3,fullImagePath) :
 
                          tup = (pr + VGG_pr, window, fullOutFileName)
                          topItems[indx].append(tup)
-                         print ("appended image")
+                         #print ("appended image")
                          if len(topItems[indx]) > TOP_SIZE :
                              topItems[indx] = sorted(topItems[indx],key = lambda t:t[0], reverse= True)[0:TOP_SIZE]
     ##
@@ -258,9 +254,10 @@ def extractFishImages(VGG_model,model, model_3,fullImagePath) :
         for fish in t:
             total_out_images += 1
             if total_out_images < MAX_OUT_IMAGES :
-                print ("output .. " + fish[2] )
+                #print ("output .. " + fish[2] )
                 cv2.imwrite(fish[2], fish[1])
-                #print("******")
+                if (total_out_images % 25) == 0:
+	     	    print("output.." + fish[2])
 
 
 if __name__ == "__main__" :
@@ -276,50 +273,16 @@ if __name__ == "__main__" :
     print("[INFO] model loaded...")
     #
     # load customized inception for phase-2
-
-    root_path = '/home/pyimagesearch/kaggle/source'
-
-    weights_path = os.path.join(ROOT_WEIGHTS_DIR, WEIGHTS_FILE)
+    model_path = os.path.join(ROOT_MODEL_DIR, MODEL_FILE)
     print("[INFO] loading Inception network...")
-    InceptionV3_notop = InceptionV3(include_top=False, weights='imagenet',
-                        input_tensor=None, input_shape=(299, 299, 3))
-    # Note that the preprocessing of InceptionV3 is:
-    # (x / 255 - 0.5) x 2
-    print('Adding Average Pooling Layer and Softmax Output Layer ...')
-    output = InceptionV3_notop.output  # Shape: (8, 8, 2048)
-    output = AveragePooling2D((8, 8), strides=(8, 8), name='avg_pool')(output)
-    output = Flatten(name='flatten')(output)
-    output = Dense(2, activation='softmax', name='predictions')(output)
-    model_2 = Model(InceptionV3_notop.input, output)
-   #
-    print ('loading saved weights')
-    model_2.load_weights(weights_path)
-    optimizer = SGD(lr = 0.0001, momentum = 0.9, decay = 0.0, nesterov = True)
-    print('compiling model2')
-    model_2.compile(loss='categorical_crossentropy', optimizer = optimizer, metrics = ['accuracy'])
+    model_2 = load_model(model_path)
     #
-    weights_path_3 = os.path.join(ROOT_WEIGHTS_DIR, WEIGHTS_FILE_3)
+    model_path_3 = os.path.join(ROOT_MODEL_DIR, MODEL_FILE_3)
     print("[INFO] loading Inception network...")
-    InceptionV3_notop_3 = InceptionV3(include_top=False, weights='imagenet',
-                        input_tensor=None, input_shape=(299, 299, 3))
-    # Note that the preprocessing of InceptionV3 is:
-    # (x / 255 - 0.5) x 2
-    print('Adding Average Pooling Layer and Softmax Output Layer ...')
-    output_3 = InceptionV3_notop_3.output  # Shape: (8, 8, 2048)
-    output_3 = AveragePooling2D((8, 8), strides=(8, 8), name='avg_pool')(output_3)
-    output_3 = Flatten(name='flatten')(output_3)
-    output_3 = Dense(2, activation='softmax', name='predictions')(output_3)
-    model_3 = Model(InceptionV3_notop_3.input, output_3)
-   #
-    print ('loading saved weights')
-    model_3.load_weights(weights_path_3)
-    optimizer = SGD(lr = 0.0001, momentum = 0.9, decay = 0.0, nesterov = True)
-    print('compiling model_3')
-    model_3.compile(loss='categorical_crossentropy', optimizer = optimizer, metrics = ['accuracy'])
-       #
+    model_3 = load_model(model_path_3)
     print("[INFO] model_3 loaded...")
     im_files = os.listdir(imagedir)
-    random.seed(a=10)
+    random.seed()
     random.shuffle(im_files)
     #for file in os.listdir(imagedir):
     for file in im_files:

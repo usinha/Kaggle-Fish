@@ -4,10 +4,10 @@ import shutil
 
 np.random.seed(2016)
 
-root_train = '/home/pyimagesearch/kaggle/DerivedImages_train_split'
-root_val = '/home/pyimagesearch/kaggle/DerivedImages_val_split'
+root_train = '/home/icarus/kaggle/Kaggle-Fish/data/DerivedImages_train_split'
+root_val = '/home/icarus/kaggle/Kaggle-Fish/data/DerivedImages_val_split'
 
-root_total = '/home/pyimagesearch/kaggle/DerivedImages'
+root_total = '/home/icarus/kaggle/Kaggle-Fish/data/DerivedImages'
 
 FishNames = ['ALB', 'BET', 'DOL', 'LAG', 'NoF', 'OTHER', 'SHARK', 'YFT']
 #FishNames = ['ALB', 'BET', 'DOL',  'SHARK', 'YFT']

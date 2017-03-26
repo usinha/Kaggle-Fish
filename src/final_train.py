@@ -23,15 +23,15 @@ img_width = 299
 img_height = 299
 #nbr_train_samples = 3019
 #nbr_validation_samples = 758
-nbr_train_samples = 173 + 128
-nbr_validation_samples = 62 + 34
-BEST_MODEL_FILE = "./final_weights.h5"
+nbr_train_samples = 2187
+nbr_validation_samples = 556
+BEST_MODEL_FILE = "/home/icarus/kaggle/Kaggle-Fish/model_weights/final_weights.h5"
 
-nbr_epochs = 50
+nbr_epochs = 30
 batch_size = 32
 
-train_data_dir = '/home/pyimagesearch/kaggle/DerivedImages_train_split'
-val_data_dir = '/home/pyimagesearch/kaggle/DerivedImages_val_split'
+train_data_dir = '/home/icarus/kaggle/Kaggle-Fish/data/DerivedImages_train_split'
+val_data_dir = '/home/icarus/kaggle/Kaggle-Fish/data/DerivedImages_val_split'
 FishNames = ['ALB', 'BET', 'DOL', 'LAG', 'NoF', 'OTHER', 'SHARK', 'YFT']
 #==============================================================================
 # https://gist.github.com/embanner/6149bba89c174af3bfd69537b72bca74
@@ -60,15 +60,12 @@ def preprocess_input_Inception(x):
     return X[0]
 
 print('Loading InceptionV3 Weights ...')
-#InceptionV3_notop = InceptionV3(include_top=False, weights='imagenet',
-#                    input_tensor=None, input_shape=(299, 299, 3))
 InceptionV3_notop = InceptionV3(include_top=False, weights='imagenet',
                     input_tensor=None, input_shape=(299, 299, 3))
 # Note that the preprocessing of InceptionV3 is:
 # (x / 255 - 0.5) x 2
 
 print('Adding Average Pooling Layer and Softmax Output Layer ...')
-##output = InceptionV3_notop.get_layer(index = -1).output  # Shape: (8, 8, 2048)
 output = InceptionV3_notop.output  # Shape: (8, 8, 2048)
 output = AveragePooling2D((8, 8), strides=(8, 8), name='avg_pool')(output)
 output = Flatten(name='flatten')(output)
@@ -76,13 +73,11 @@ output = Dense(8, activation='softmax', name='predictions')(output)
 
 
 model = Model(InceptionV3_notop.input, output)
-#InceptionV3_model.summary()
-#print(model.summary())
-#InceptionV3_model.summary()
-for layer in InceptionV3_notop.layers:
-    layer.trainable = False
-#for layer in model.layers[:-3]:
-#    layer.trainable = False
+# train all layers
+########
+#for layer in InceptionV3_notop.layers:
+#   layer.trainable = False
+#########
 optimizer = SGD(lr = learning_rate, momentum = 0.9, decay = 0.0, nesterov = True)
 model.compile(loss='categorical_crossentropy', optimizer = optimizer, metrics = ['accuracy'])
 
@@ -95,7 +90,7 @@ train_datagen = ImageDataGenerator(
         preprocessing_function=preprocess_input_Inception,
         shear_range=0.1,
         zoom_range=0.1,
-        rotation_range=20.,
+        rotation_range=30.,
         width_shift_range=0.1,
         height_shift_range=0.1,
         horizontal_flip=True)
