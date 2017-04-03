@@ -17,7 +17,7 @@ import numpy as np
 img_width = 299
 img_height = 299
 batch_size = 32
-nbr_test_samples = 1000 #128
+nbr_test_samples = 1000 
 
 WEIGHTS_FILE = 'final_weights_bb.h5'
 ROOT_WEIGHTS_DIR = '/home/icarus/kaggle/Kaggle-Fish/model_weights'
@@ -103,9 +103,12 @@ model.compile(loss='categorical_crossentropy', optimizer = optimizer, metrics = 
 
 
 predictions = model.predict_generator(test_generator, nbr_test_samples)
+print type(predictions)
+print predictions.shape
 # insert nof colum
-nof_zeros = (nbr_test_samples,1)
-predictions = np.insert(predictions,4, nof_zeros,1)
+nof_zeros = np.zeros((nbr_test_samples))
+
+predictions = np.insert(predictions[:nbr_test_samples],4, nof_zeros,1)
 for i, in_image_name in enumerate(test_image_list):
     im_name = in_image_name.split('_p')[0] + '.jpg'
     pr = float(in_image_name.split('_p')[1][0:4])
@@ -125,7 +128,7 @@ np.savetxt(os.path.join(root_path, PRED_TEXT), predictions)
 
 print('Begin to write predicted file ..')
 f_submit = open(os.path.join(root_path, PRED_FILE), 'w')
-f_submit.write('image,pred\n')
+f_submit.write('image,ALB,BET,DOL,LAG,NoF,OTHER,SHARK,YFT\n')
 for i, in_image_name in enumerate(test_image_list):
     image_name = in_image_name.split('_p')[0] + '.jpg'
     pred = ['%.6f' % p for p in predictions[i, 0:]]

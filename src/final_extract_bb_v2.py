@@ -283,7 +283,7 @@ if __name__ == "__main__" :
     running_file_count = 0
     for file in im_files:
         running_file_count += 1
-        if running_file_count < 159 :
+        if running_file_count < 521 :
 	    continue
 	if (running_file_count % 50) == 0 :          
             print ('running input file count=' + str(running_file_count))
