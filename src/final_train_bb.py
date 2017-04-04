@@ -23,15 +23,15 @@ img_width = 299
 img_height = 299
 #nbr_train_samples = 3019
 #nbr_validation_samples = 758
-nbr_train_samples = 3428
-nbr_validation_samples = 857
+nbr_train_samples = 2800
+nbr_validation_samples = 525
 BEST_MODEL_FILE = "/home/icarus/kaggle/Kaggle-Fish/model_weights/final_weights_bb.h5"
 
 nbr_epochs = 50
 batch_size = 32
 
-train_data_dir = '/home/icarus/kaggle/Kaggle-Fish/data/train_bb_images_final'
-val_data_dir = '/home/icarus/kaggle/Kaggle-Fish/data/val_bb_images_final'
+train_data_dir = '/home/icarus/kaggle/Kaggle-Fish/data/train_bb_images_final_v2'
+val_data_dir = '/home/icarus/kaggle/Kaggle-Fish/data/val_bb_images_final_v2'
 FishNames = ['ALB', 'BET', 'DOL', 'LAG',  'OTHER', 'SHARK', 'YFT']
 #==============================================================================
 # https://gist.github.com/embanner/6149bba89c174af3bfd69537b72bca74

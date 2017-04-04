@@ -114,7 +114,7 @@ for i, in_image_name in enumerate(test_image_list):
     pr = float(in_image_name.split('_p')[1][0:4])
     if i < 5:
 	print ( im_name + ' pr=' + str(pr))
-    if pr > 0.50 :
+    if pr > 0.20 :
 	nof_pred =  1.0 - pr
 	predictions[i] = predictions[i] *pr 
     else :
